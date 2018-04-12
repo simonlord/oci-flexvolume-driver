@@ -15,6 +15,8 @@
 BIN := oci
 BUILD_DIR := dist
 BIN_DIR := ${BUILD_DIR}/bin
+REGISTRY := wcr.io/simonlord
+IMAGE := $(REGISTRY)/oci-flexvolume-driver
 
 BUILD := $(shell git describe --always --dirty)
 # Allow overriding for release versions
@@ -28,8 +30,15 @@ TEST_IMAGE ?= $(REGISTRY)/$(DOCKER_REGISTRY_USERNAME)/oci-flexvolume-driver-test
 
 SRC_DIRS := cmd pkg # directories which hold app source (not vendored)
 
+RETURN_CODE := $(shell sed --version >/dev/null 2>&1; echo $$?)
+ifeq ($(RETURN_CODE),1)
+    SED_INPLACE = -i ''
+else
+    SED_INPLACE = -i
+endif
+
 .PHONY: all
-all: clean test build build-integration-tests
+all: clean test build manifests build-integration-tests
 
 .PHONY: gofmt
 gofmt:
@@ -62,6 +71,13 @@ build:
 	    -v \
 	    -ldflags="-s -w -X main.version=${VERSION} -X main.build=${BUILD}" \
 	    -o ${BIN_DIR}/${BIN} ./cmd/oci/
+
+.PHONY: manifests
+manifests: build
+	@cp -a manifests/* dist
+	@sed ${SED_INPLACE}                                            \
+	    's#__VERSION__#${VERSION}#g' \
+	    dist/oci-flexvolume-driver.yaml
 
 .PHONY: build-integration-tests
 build-integration-tests:
