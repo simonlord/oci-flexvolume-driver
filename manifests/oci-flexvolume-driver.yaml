@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: flex-set
+spec:
+  template:
+    metadata:
+      name: flex-deploy
+      labels:
+        app: flex-deploy
+    spec:
+      containers:
+        - image: wcr.io/oracle/oci-flexvolume-driver:0.1.0
+          name: flex-deploy
+          securityContext:
+              privileged: true
+          volumeMounts:
+            - mountPath: /flexmnt
+              name: flexvolume-mount
+      volumes:
+        - name: flexvolume-mount
+          hostPath:
+            path: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/
